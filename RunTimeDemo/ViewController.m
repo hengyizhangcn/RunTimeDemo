@@ -83,14 +83,38 @@
     if (numClasses > 0 )
     {
         classes = (__unsafe_unretained Class *)malloc(sizeof(Class) * numClasses);
-        numClasses = objc_getClassList(classes, numClasses);
+        numClasses = objc_getClassList(classes, numClasses); //获取iOS系统中，可用类列表
         
         for (int i = 0; i < numClasses; i++) {
-            NSLog(@"Class name:%s", class_getName(classes[i]));
+//            NSLog(@"Class name:%s", class_getName(classes[i]));
         }
-        NSLog(@"total number:%d", numClasses);
+//        NSLog(@"total number:%d", numClasses);
         free(classes);
     }
+    
+    unsigned totalClass = 0;
+    Class *classList = objc_copyClassList(&totalClass); //复制iOS系统中可用类列表，赋值后需要进行释放
+    if (totalClass > 0) {
+        NSString *filePath = @"/Users/zhy/Desktop/ClassList";
+        NSMutableArray *classNameArray = [NSMutableArray new];
+        for (int i = 0; i < totalClass; i ++) {
+            NSLog(@"Class name:%s", class_getName(classList[i]));
+            
+            NSString *className = [NSString stringWithFormat:@"%s", class_getName(classList[i])];
+            [classNameArray addObject:className];
+        }
+        
+        NSString *classNameStr = [classNameArray componentsJoinedByString:@"\n"];
+        
+        NSFileManager *manager = [NSFileManager defaultManager];
+        NSData *data = [classNameStr dataUsingEncoding:NSUTF8StringEncoding];
+        if ([manager fileExistsAtPath:filePath]) {
+//            [data writeToFile:filePath options:NSDataWritingWithoutOverwriting error:nil];
+            [data writeToFile:filePath atomically:YES];
+        }
+        NSLog(@"total number:%d", totalClass);
+    }
+    free(classList);
 }
 
 
