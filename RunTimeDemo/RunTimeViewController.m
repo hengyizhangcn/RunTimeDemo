@@ -15,9 +15,11 @@
 
 @property (nonatomic, copy) NSString *name;
 @property (nonatomic, weak) NSString *address;
+
 @end
 
 @implementation RunTimeViewController
+
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -125,13 +127,30 @@
     }
     free(classList);
     
-<<<<<<< HEAD:RunTimeDemo/ViewController.m
-    
-=======
     class_setVersion([UILabel class], 5);
     
     NSLog(@"%d", class_getVersion([UILabel class]));
->>>>>>> 08d72073f592240a99e9e74d0e706143011c9ec9:RunTimeDemo/RunTimeViewController.m
+    NSLog(@"%zu", class_getInstanceSize(instanceClass));
+    NSLog(@"%zu", class_getInstanceSize(metaClass));
+    NSLog(@"%zu", class_getInstanceSize(rootClass));
+    
+    Ivar ivar = class_getClassVariable([UILabel class], "isa");
+    
+    NSLog(@"%@", object_getIvar([UILabel class], ivar)); //如果想获取age，此行会出错，因为%@只打印对象
+    NSLog(@"%s,%s,%td", ivar_getName(ivar),ivar_getTypeEncoding(ivar),ivar_getOffset(ivar));
+    
+    unsigned int count;
+    Ivar *ivarList = class_copyIvarList([UILabel class], &count); //获取实例变量列表
+    for (int i = 0; i < count; i++) {
+        Ivar tempVar = ivarList[i];
+//        NSLog(@"%s", ivar_getName(tempVar));
+    }
+    objc_property_t *propertyList = class_copyPropertyList([self class], &count); //获取属性列表
+    for (int i = 0; i < count; i++) {
+        objc_property_t tempProperty = propertyList[i];
+        NSLog(@"%s", property_getName(tempProperty));
+        NSLog(@"%s", property_getAttributes(tempProperty));
+    }
 }
 
 
