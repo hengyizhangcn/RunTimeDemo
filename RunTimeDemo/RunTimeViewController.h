@@ -1,5 +1,5 @@
 //
-//  ViewController.h
+//  RunTimeViewController.h
 //  RunTimeDemo
 //
 //  Created by zhy on 18/05/2017.
@@ -8,7 +8,7 @@
 
 #import <UIKit/UIKit.h>
 
-@interface ViewController : UIViewController
+@interface RunTimeViewController : UIViewController
 
 
 @end

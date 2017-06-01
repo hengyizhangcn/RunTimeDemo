@@ -1,15 +1,15 @@
 //
-//  ViewController.m
+//  RunTimeViewController.m
 //  RunTimeDemo
 //
 //  Created by zhy on 18/05/2017.
 //  Copyright © 2017 UAMA. All rights reserved.
 //
 
-#import "ViewController.h"
+#import "RunTimeViewController.h"
 #import <objc/runtime.h>
 
-@interface ViewController ()
+@interface RunTimeViewController ()
 
 @property (nonatomic) NSInteger age;
 
@@ -17,11 +17,12 @@
 @property (nonatomic, weak) NSString *address;
 @end
 
-@implementation ViewController
+@implementation RunTimeViewController
 
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view, typically from a nib.
+    
     
     UILabel *descLabel = [[UILabel alloc] init];
     descLabel.text = @"低收入者";
@@ -54,22 +55,28 @@
     Class metaClassObj = objc_getMetaClass(NSStringFromClass([UILabel class]).UTF8String);
     NSLog(@"%p", metaClassObj);
     NSLog(@"%p", object_getClass([UILabel class]));
+    NSLog(@"%d", class_isMetaClass(metaClassObj));
+    
+//    class_setSuperclass([descLabel class], [UIButton class]);
     
     Class instanceClass = object_getClass(descLabel); //类实例->类对象
     NSLog(@"%p", instanceClass);
     NSLog(@"%@", instanceClass);
     NSLog(@"superClass:%@", class_getSuperclass(instanceClass));
+    NSLog(@"%d", class_isMetaClass(instanceClass));
     
     Class metaClass = object_getClass(instanceClass); //类对象->元类对象
     NSLog(@"%p", metaClass);
     NSLog(@"%@", metaClass);
     NSLog(@"superClass:%@", class_getSuperclass(metaClass));
+    NSLog(@"%d", class_isMetaClass(metaClass));
     
     Class rootClass = object_getClass(metaClass); //元类对象->根类对象
     NSLog(@"%p", rootClass);
     NSLog(@"%@", rootClass);
     NSLog(@"superClass:%@", class_getSuperclass(rootClass));
     NSLog(@"%@", object_getClass(rootClass));
+    NSLog(@"%d", class_isMetaClass(rootClass));
     
     NSLog(@"%@", objc_lookUpClass("UILabel")); //该方法不会调用class handler callback
     NSLog(@"%@", objc_getRequiredClass("UILabel")); //与objc_getClass相同，但是类不存在会终止进程
@@ -98,7 +105,7 @@
         NSString *filePath = @"/Users/zhy/Desktop/ClassList";
         NSMutableArray *classNameArray = [NSMutableArray new];
         for (int i = 0; i < totalClass; i ++) {
-            NSLog(@"Class name:%s", class_getName(classList[i]));
+//            NSLog(@"Class name:%s", class_getName(classList[i]));
             
             NSString *className = [NSString stringWithFormat:@"%s", class_getName(classList[i])];
             [classNameArray addObject:className];
@@ -111,12 +118,20 @@
         if ([manager fileExistsAtPath:filePath]) {
 //            [data writeToFile:filePath options:NSDataWritingWithoutOverwriting error:nil];
             [data writeToFile:filePath atomically:YES];
+        } else {
+            [manager createFileAtPath:filePath contents:data attributes:nil];
         }
         NSLog(@"total number:%d", totalClass);
     }
     free(classList);
     
+<<<<<<< HEAD:RunTimeDemo/ViewController.m
     
+=======
+    class_setVersion([UILabel class], 5);
+    
+    NSLog(@"%d", class_getVersion([UILabel class]));
+>>>>>>> 08d72073f592240a99e9e74d0e706143011c9ec9:RunTimeDemo/RunTimeViewController.m
 }
 
 
