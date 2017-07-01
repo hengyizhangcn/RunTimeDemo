@@ -11,6 +11,8 @@
 
 @interface RunTimeViewController ()
 
+@property (class) NSInteger height;
+
 @property (nonatomic) NSInteger age;
 
 @property (nonatomic, copy) NSString *name;
@@ -20,6 +22,7 @@
 
 @implementation RunTimeViewController
 
+static NSInteger _height = 0;
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -128,13 +131,47 @@
     class_setVersion([UILabel class], 5);
     
     NSLog(@"%d", class_getVersion([UILabel class]));
+    
+    NSLog(@"%zu", class_getInstanceSize([self class]));
+    
+    RunTimeViewController.height = 30;
+    Ivar classIvar = class_getClassVariable([RunTimeViewController class], "height");
+    
+    NSLog(@"%ld", (NSInteger)object_getIvar([RunTimeViewController class], classIvar));
+    NSLog(@"%ld", (long)RunTimeViewController.height);
+    
+    unsigned int outCount = 0;
+    Ivar *labelIvar = class_copyIvarList([UILabel class], &outCount);
+    for (int index = 0; index < outCount; index++) {
+//        NSLog(@"%s", ivar_getName(labelIvar[index]));
+//        NSLog(@"%s", ivar_getTypeEncoding(labelIvar[index]));
+//        NSLog(@"");
+    }
+    
+    Method *methodList = class_copyMethodList([UILabel class], &outCount);
+    for (int i = 0; i< outCount; i ++ ) {
+        Method method = methodList[i];
+        NSLog(@"%s", sel_getName(method_getName(method)));
+        NSLog(@"returnType:%s", method_copyReturnType(method));
+        struct objc_method_description *method_description = method_getDescription(method);
+        NSLog(@"%s", sel_getName(method_description->name));
+        NSLog(@"%s", method_description->types);
+        NSLog(@"%s", method_getTypeEncoding(method));
+        char dst[100];
+        method_getReturnType(method, dst, 100);
+        NSLog(@"returnType:%s", dst);
+        NSLog(@"\n\n");
+    }
 }
 
 
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
++ (void)setHeight:(NSInteger)height
+{
+    _height = height;
 }
 
-
++ (NSInteger)height
+{
+    return _height;
+}
 @end
