@@ -151,6 +151,9 @@
         NSLog(@"%s", property_getName(tempProperty));
         NSLog(@"%s", property_getAttributes(tempProperty));
     }
+    
+    NSLog(@"%s", class_getIvarLayout([self class])); //uint8应该是无符号8位二进制整型，其实就是unsigned char类型
+    NSLog(@"%s", class_getWeakIvarLayout([self class]));
 }
 
 
