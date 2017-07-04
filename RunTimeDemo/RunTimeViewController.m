@@ -11,6 +11,8 @@
 
 @interface RunTimeViewController ()
 
+@property (class) NSInteger height;
+
 @property (nonatomic) NSInteger age;
 
 @property (nonatomic, copy) NSString *name;
@@ -20,12 +22,87 @@
 
 @implementation RunTimeViewController
 
+static NSInteger _height = 0;
+
++ (void)load
+{
+    NSString *className = NSStringFromClass(self.class);
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        Class class = object_getClass((id)self); //替换类方法
+        SEL originalSelector = @selector(setHeight:);
+        SEL swizzledSelector = @selector(setTemproaryHeight:);
+        
+//        Class class = [self class]; 替换实例方法
+//        SEL originalSelector = @selector(setName:);
+//        SEL swizzledSelector = @selector(setTemproary:);
+        
+        Method originalMethod = class_getInstanceMethod(class, originalSelector);
+        Method swizzledMethod = class_getInstanceMethod(class, swizzledSelector);
+        
+        BOOL didAddMethod = class_addMethod(class, originalSelector, method_getImplementation(swizzledMethod), method_getTypeEncoding(swizzledMethod));
+        if (didAddMethod) {
+            class_replaceMethod(class, swizzledSelector, method_getImplementation(originalMethod), method_getTypeEncoding(originalMethod));
+        } else {
+            method_exchangeImplementations(originalMethod, swizzledMethod);
+        }
+    });
+}
+
+//+(void)load{
+//    NSString *className = NSStringFromClass(self.class);
+//    NSLog(@"classname %@", className);
+//    static dispatch_once_t onceToken;
+//    dispatch_once(&onceToken, ^{
+//        //要特别注意你替换的方法到底是哪个性质的方法
+//        // When swizzling a Instance method, use the following:
+//        //        Class class = [self class];
+//
+//        // When swizzling a class method, use the following:
+//        Class class = object_getClass((id)self);
+//
+//        SEL originalSelector = @selector(systemMethod_PrintLog);
+//        SEL swizzledSelector = @selector(ll_imageName);
+//
+//        Method originalMethod = class_getInstanceMethod(class, originalSelector);
+//        Method swizzledMethod = class_getInstanceMethod(class, swizzledSelector);
+//
+//        BOOL didAddMethod =
+//        class_addMethod(class,
+//                        originalSelector,
+//                        method_getImplementation(swizzledMethod),
+//                        method_getTypeEncoding(swizzledMethod));
+//
+//        if (didAddMethod) {
+//            class_replaceMethod(class,
+//                                swizzledSelector,
+//                                method_getImplementation(originalMethod),
+//                                method_getTypeEncoding(originalMethod));
+//        } else {
+//            method_exchangeImplementations(originalMethod, swizzledMethod);
+//        }
+//    });
+//}
+
+- (void)setTemproary:(NSString *)temproary
+{
+    _name = temproary;
+    NSLog(@"_name:%@", temproary);
+}
+
++ (void)setTemproaryHeight:(NSInteger)temproary
+{
+    _height = temproary;
+    NSLog(@"_height:%ld", temproary);
+}
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    // Do any additional setup after loading the view, typically from a nib.
-    
-    
+    self.name = @"zhy";
+    RunTimeViewController.height = 20;
+}
+
+- (void)runtimeLearn {
     UILabel *descLabel = [[UILabel alloc] init];
     descLabel.text = @"低收入者";
     
@@ -130,26 +207,36 @@
     class_setVersion([UILabel class], 5);
     
     NSLog(@"%d", class_getVersion([UILabel class]));
-    NSLog(@"%zu", class_getInstanceSize(instanceClass));
-    NSLog(@"%zu", class_getInstanceSize(metaClass));
-    NSLog(@"%zu", class_getInstanceSize(rootClass));
     
-    Ivar ivar = class_getClassVariable([UILabel class], "isa");
+    NSLog(@"%zu", class_getInstanceSize([self class]));
     
-    NSLog(@"%@", object_getIvar([UILabel class], ivar)); //如果想获取age，此行会出错，因为%@只打印对象
-    NSLog(@"%s,%s,%td", ivar_getName(ivar),ivar_getTypeEncoding(ivar),ivar_getOffset(ivar));
+    RunTimeViewController.height = 30;
+    Ivar classIvar = class_getClassVariable([RunTimeViewController class], "height");
     
-    unsigned int count;
-    Ivar *ivarList = class_copyIvarList([UILabel class], &count); //获取实例变量列表
-    for (int i = 0; i < count; i++) {
-        Ivar tempVar = ivarList[i];
-//        NSLog(@"%s", ivar_getName(tempVar));
+    NSLog(@"%ld", (NSInteger)object_getIvar([RunTimeViewController class], classIvar));
+    NSLog(@"%ld", (long)RunTimeViewController.height);
+    
+    unsigned int outCount = 0;
+    Ivar *labelIvar = class_copyIvarList([UILabel class], &outCount);
+    for (int index = 0; index < outCount; index++) {
+//        NSLog(@"%s", ivar_getName(labelIvar[index]));
+//        NSLog(@"%s", ivar_getTypeEncoding(labelIvar[index]));
+//        NSLog(@"");
     }
-    objc_property_t *propertyList = class_copyPropertyList([self class], &count); //获取属性列表
-    for (int i = 0; i < count; i++) {
-        objc_property_t tempProperty = propertyList[i];
-        NSLog(@"%s", property_getName(tempProperty));
-        NSLog(@"%s", property_getAttributes(tempProperty));
+    
+    Method *methodList = class_copyMethodList([UILabel class], &outCount);
+    for (int i = 0; i< outCount; i ++ ) {
+        Method method = methodList[i];
+        NSLog(@"%s", sel_getName(method_getName(method)));
+        NSLog(@"returnType:%s", method_copyReturnType(method));
+        struct objc_method_description *method_description = method_getDescription(method);
+        NSLog(@"%s", sel_getName(method_description->name));
+        NSLog(@"%s", method_description->types);
+        NSLog(@"%s", method_getTypeEncoding(method));
+        char dst[100];
+        method_getReturnType(method, dst, 100);
+        NSLog(@"returnType:%s", dst);
+        NSLog(@"\n\n");
     }
     
     NSLog(@"%s", class_getIvarLayout([self class])); //uint8应该是无符号8位二进制整型，其实就是unsigned char类型
@@ -157,10 +244,13 @@
 }
 
 
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
++ (void)setHeight:(NSInteger)height
+{
+    _height = height;
 }
 
-
++ (NSInteger)height
+{
+    return _height;
+}
 @end
