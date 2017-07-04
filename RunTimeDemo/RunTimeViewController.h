@@ -10,6 +10,6 @@
 
 @interface RunTimeViewController : UIViewController
 
-
+- (void)getWeather;
 @end
 

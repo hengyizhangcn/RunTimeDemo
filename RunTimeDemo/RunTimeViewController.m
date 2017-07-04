@@ -26,63 +26,39 @@ static NSInteger _height = 0;
 
 + (void)load
 {
-    NSString *className = NSStringFromClass(self.class);
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        Class class = object_getClass((id)self); //替换类方法
-        SEL originalSelector = @selector(setHeight:);
-        SEL swizzledSelector = @selector(setTemproaryHeight:);
+//        Class class = object_getClass((id)self); //替换类方法
+//        SEL originalSelector = @selector(setHeight:);
+//        SEL swizzledSelector = @selector(setTemproaryHeight:);
         
-//        Class class = [self class]; 替换实例方法
+        Class class = [self class]; //替换实例方法
 //        SEL originalSelector = @selector(setName:);
 //        SEL swizzledSelector = @selector(setTemproary:);
+        SEL originalSelector = NSSelectorFromString(@"getWeather");
+        SEL swizzledSelector = NSSelectorFromString(@"getCalendar");
         
         Method originalMethod = class_getInstanceMethod(class, originalSelector);
         Method swizzledMethod = class_getInstanceMethod(class, swizzledSelector);
         
         BOOL didAddMethod = class_addMethod(class, originalSelector, method_getImplementation(swizzledMethod), method_getTypeEncoding(swizzledMethod));
-        if (didAddMethod) {
+        if (didAddMethod) { //说明该方法没被实现，需要替换方法
             class_replaceMethod(class, swizzledSelector, method_getImplementation(originalMethod), method_getTypeEncoding(originalMethod));
-        } else {
+        } else { //该方法有实现，需要替换实现
             method_exchangeImplementations(originalMethod, swizzledMethod);
         }
     });
 }
 
-//+(void)load{
-//    NSString *className = NSStringFromClass(self.class);
-//    NSLog(@"classname %@", className);
-//    static dispatch_once_t onceToken;
-//    dispatch_once(&onceToken, ^{
-//        //要特别注意你替换的方法到底是哪个性质的方法
-//        // When swizzling a Instance method, use the following:
-//        //        Class class = [self class];
-//
-//        // When swizzling a class method, use the following:
-//        Class class = object_getClass((id)self);
-//
-//        SEL originalSelector = @selector(systemMethod_PrintLog);
-//        SEL swizzledSelector = @selector(ll_imageName);
-//
-//        Method originalMethod = class_getInstanceMethod(class, originalSelector);
-//        Method swizzledMethod = class_getInstanceMethod(class, swizzledSelector);
-//
-//        BOOL didAddMethod =
-//        class_addMethod(class,
-//                        originalSelector,
-//                        method_getImplementation(swizzledMethod),
-//                        method_getTypeEncoding(swizzledMethod));
-//
-//        if (didAddMethod) {
-//            class_replaceMethod(class,
-//                                swizzledSelector,
-//                                method_getImplementation(originalMethod),
-//                                method_getTypeEncoding(originalMethod));
-//        } else {
-//            method_exchangeImplementations(originalMethod, swizzledMethod);
-//        }
-//    });
-//}
+- (void)getWeather
+{
+    
+}
+
+- (void)getCalendar
+{
+    NSLog(@"%@", [NSDate date]);
+}
 
 - (void)setTemproary:(NSString *)temproary
 {
@@ -100,9 +76,69 @@ static NSInteger _height = 0;
     [super viewDidLoad];
     self.name = @"zhy";
     RunTimeViewController.height = 20;
+    
+    [self runtimeLearn];
 }
 
+
 - (void)runtimeLearn {
+    const char * className = "Calculator";
+    Class kclass = objc_getClass(className);
+    if (!kclass)
+    {
+        Class superClass = [NSObject class];
+        kclass = objc_allocateClassPair(superClass, className, 0);
+    }
+    
+    NSUInteger size;
+    NSUInteger alignment;
+    NSGetSizeAndAlignment("*", &size, &alignment);
+    [self class_addIvar:kclass name:"country" size:size alignment:alignment types:"*"];
+    class_addMethod(kclass, @selector(setExpressionFormula:), (IMP)setExpressionFormula, "v@:@");
+    class_addMethod(kclass, @selector(getExpressionFormula), (IMP)getExpressionFormula, "@@:");
+    
+//    d.注册到运行时环境
+    objc_registerClassPair(kclass);
+//    e.实例化类
+    id instance = [[kclass alloc] init];
+//    f.给变量赋值
+    Ivar country = class_getInstanceVariable(kclass, "country");
+    object_setIvar(kclass, country, @"China");
+    
+    id countryStr = object_getIvar(kclass, country);
+    
+    NSLog(@"country:%@", countryStr);
+    
+//    object_setInstanceVariable(instance, "expression", "1+1");, 在arc下不能使用，可使用object_setIvar代替
+////    g.获取变量值
+//    void * value = NULL;
+//    object_getInstanceVariable(instance, "expression", &value);, 在arc下不能使用，可使用object_getIvar代替
+//    h.调用函数
+    [instance performSelector:@selector(getExpressionFormula)];
+}
+
+static void setExpressionFormula(id self, SEL cmd, id value)
+{
+    NSLog(@"call setExpressionFormula");
+}
+
+static void getExpressionFormula(id self, SEL cmd)
+{
+    NSLog(@"call getExpressionFormula");
+}
+
+- (void)class_addIvar:(Class)class name:(const char *)name size:(size_t)size alignment:(uint8_t)alignment types:(const char *)types {
+    
+    //    if (class_addIvar([_person class], "country", sizeof(NSString *), 0, "@")) {
+    if (class_addIvar(class, name, size, alignment, types)) {
+        
+        NSLog(@"%sadd ivar success",__func__);
+    }else{
+        NSLog(@"%sadd ivar fail",__func__);
+    }
+}
+
+- (void)runtimeLearn0 {
     UILabel *descLabel = [[UILabel alloc] init];
     descLabel.text = @"低收入者";
     
@@ -221,6 +257,7 @@ static NSInteger _height = 0;
     for (int index = 0; index < outCount; index++) {
 //        NSLog(@"%s", ivar_getName(labelIvar[index]));
 //        NSLog(@"%s", ivar_getTypeEncoding(labelIvar[index]));
+        //type定义参考：https://developer.apple.com/library/mac/#documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html
 //        NSLog(@"");
     }
     
