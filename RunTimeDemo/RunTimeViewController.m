@@ -114,6 +114,11 @@ static NSInteger _height = 0;
 //    void * value = NULL;
 //    object_getInstanceVariable(instance, "expression", &value);, 在arc下不能使用，可使用object_getIvar代替
 //    h.调用函数
+    
+    
+    /*
+     * 在此处调用会产生runloop崩溃CFRUNLOOP is calling out to a source0 perform function
+     */
     [instance performSelector:@selector(getExpressionFormula)];
 }
 
