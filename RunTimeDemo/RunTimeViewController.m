@@ -24,17 +24,56 @@
 
 static NSInteger _height = 0;
 
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.name = @"zhy";
+    RunTimeViewController.height = 20;
+    
+    objc_setAssociatedObject(self, "city", @"Washington", OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    
+    [self runtimeLearn];
+}
+
+- (void)runtimeLearn {
+    
+    NSNumber *place;
+    
+    object_setClass(place, [NSString class]);
+    
+    place = @"test";
+    
+    NSLog(@"%@", object_getClass(place));
+    
+    NSLog(@"%@", objc_lookUpClass("UIViewController")); //查询类是否注册， 并返回
+    
+//    objc_getRequiredClass("MYClassYourClass"); //如果找不到会崩溃
+    
+    NSLog(@"%@", objc_getAssociatedObject(self, "city"));
+    
+    Method runtimeMethod = class_getInstanceMethod([self class], @selector(setTemproary:));
+    method_getName(runtimeMethod);
+    IMP implementation = method_getImplementation(runtimeMethod);
+    method_getTypeEncoding(runtimeMethod); //""v24@0:8@16"" v:void, 24:整个方法参数占位总长度，@0表示在offset为0的地方有个OC对象，即self自身，8（字节）:在offset为8的地方有个SEL,@16:代表在offset 16的地方有个oc类型，我们可以发现24为所有参数所占空间的和..
+    //类型编码如下：https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html#//apple_ref/doc/uid/TP40008048-CH100-SW1
+}
+
+- (void)dealloc
+{
+    objc_setAssociatedObject(self, "city", nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+
 + (void)load
 {
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-//        Class class = object_getClass((id)self); //替换类方法
-//        SEL originalSelector = @selector(setHeight:);
-//        SEL swizzledSelector = @selector(setTemproaryHeight:);
+        //        Class class = object_getClass((id)self); //替换类方法
+        //        SEL originalSelector = @selector(setHeight:);
+        //        SEL swizzledSelector = @selector(setTemproaryHeight:);
         
         Class class = [self class]; //替换实例方法
-//        SEL originalSelector = @selector(setName:);
-//        SEL swizzledSelector = @selector(setTemproary:);
+        //        SEL originalSelector = @selector(setName:);
+        //        SEL swizzledSelector = @selector(setTemproary:);
         SEL originalSelector = NSSelectorFromString(@"getWeather");
         SEL swizzledSelector = NSSelectorFromString(@"getCalendar");
         
@@ -72,16 +111,8 @@ static NSInteger _height = 0;
     NSLog(@"_height:%ld", temproary);
 }
 
-- (void)viewDidLoad {
-    [super viewDidLoad];
-    self.name = @"zhy";
-    RunTimeViewController.height = 20;
-    
-    [self runtimeLearn];
-}
 
-
-- (void)runtimeLearn {
+- (void)runtimeLearn2 {
     const char * className = "Calculator";
     Class kclass = objc_getClass(className);
     if (!kclass)
@@ -222,7 +253,7 @@ static void getExpressionFormula(id self, SEL cmd)
     unsigned totalClass = 0;
     Class *classList = objc_copyClassList(&totalClass); //复制iOS系统中可用类列表，赋值后需要进行释放
     if (totalClass > 0) {
-        NSString *filePath = @"/Users/zhy/Desktop/ClassList";
+        NSString *filePath = @"/Users/hengyi.zhang/Desktop/ClassList";
         NSMutableArray *classNameArray = [NSMutableArray new];
         for (int i = 0; i < totalClass; i ++) {
 //            NSLog(@"Class name:%s", class_getName(classList[i]));
