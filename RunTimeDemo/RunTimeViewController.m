@@ -8,6 +8,7 @@
 
 #import "RunTimeViewController.h"
 #import <objc/runtime.h>
+#import <AVFoundation/AVFoundation.h>
 
 @interface RunTimeViewController ()
 
@@ -34,7 +35,40 @@ static NSInteger _height = 0;
     [self runtimeLearn];
 }
 
-- (void)runtimeLearn {
+/**
+ 库、选择器、
+ */
+- (void)runtimeLearn
+{
+    unsigned int outCount = 0;
+    const char ** imageNames = objc_copyImageNames(&outCount); //iOS10，共59个框架和动态库
+    for (int i = 0; i < outCount; i ++) {
+        NSString *fileName = [NSString stringWithCString:imageNames[i] encoding:NSUTF8StringEncoding];
+        NSURL *fileUrl = [NSURL fileURLWithPath:fileName];
+//        NSLog(@"%@", fileUrl.lastPathComponent);
+    }
+    free(imageNames);
+    
+    class_getImageName([RunTimeViewController class]); //查询类的来源库
+    
+    const char ** classNames = objc_copyClassNamesForImage(class_getImageName([AVCaptureInput class]), &outCount);
+    for (int i = 0; i < outCount; i ++) {
+        NSLog(@"%s", classNames[i]); //如UIKit共2079个类，AVFoundation共399个类
+    }
+    free(classNames);
+    
+    sel_getName(@selector(setImage:));
+    
+    const char *name = [NSStringFromSelector(@selector(runtimeLearn3)) UTF8String];
+    SEL registeredSel = sel_registerName(name);
+    registeredSel = sel_getUid(name); //与sel_registerName方法相同
+    sel_isEqual(registeredSel, @selector(runtimeLearn3)); //YES
+}
+
+/**
+ 变量、实例、方法
+ */
+- (void)runtimeLearn3 {
     
     NSNumber *place;
     
@@ -55,6 +89,25 @@ static NSInteger _height = 0;
     IMP implementation = method_getImplementation(runtimeMethod);
     method_getTypeEncoding(runtimeMethod); //""v24@0:8@16"" v:void, 24:整个方法参数占位总长度，@0表示在offset为0的地方有个OC对象，即self自身，8（字节）:在offset为8的地方有个SEL,@16:代表在offset 16的地方有个oc类型，我们可以发现24为所有参数所占空间的和..
     //类型编码如下：https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html#//apple_ref/doc/uid/TP40008048-CH100-SW1
+    method_copyReturnType(runtimeMethod); //v，代表void，比如q代表nsinteger(long long)，@代表OC对象
+    method_copyArgumentType(runtimeMethod, 0); //其中0是index，代表第几个字节，如0的参数类型是@，1的参数类型是:代表SEL,2的参数类型是@
+    char *returnType = (char *)malloc(sizeof(char *) * 2);
+    method_getReturnType(runtimeMethod, returnType, 8); //注：应先给returnType分配内存空间,然后释放
+    free(returnType);
+    method_getNumberOfArguments(runtimeMethod);//3，不带参数的方法，默认有两个参数，id和SEL
+    
+    char *argumentType = (char *)malloc(sizeof(char *));
+    method_getArgumentType(runtimeMethod, 0, argumentType, 8); //获取第*个的参数类型，如0的参数类型是@，1的参数类型是:代表SEL,2的参数类型是@
+    free(argumentType);
+    struct objc_method_description *methodDescription = method_getDescription(runtimeMethod);
+    //methodDescription->name; //打印为"setTemproary:"
+    //methodDescription->types;//"v24@0:8@16"，同method_getTypeEncoding(runtimeMethod)
+    
+    method_setImplementation(runtimeMethod, method_getImplementation(class_getInstanceMethod([self class], @selector(setAddress:))));
+    [self setTemproary:@"this is come from Temproary"]; //调用此方法时，会打印“this is come from Temproary”
+    method_exchangeImplementations(runtimeMethod, class_getInstanceMethod([self class], @selector(setAddress:)));
+    [self setAddress:@"this is come from address"];
+    //经过以上两步，方法的实现又给交换回来了
 }
 
 - (void)dealloc
@@ -103,6 +156,11 @@ static NSInteger _height = 0;
 {
     _name = temproary;
     NSLog(@"_name:%@", temproary);
+}
+
+- (void)setAddress:(NSString *)address
+{
+    _address = address;
 }
 
 + (void)setTemproaryHeight:(NSInteger)temproary
