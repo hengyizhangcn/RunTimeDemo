@@ -57,7 +57,10 @@ static NSInteger _height = 0;
         NSLog(@"new implementation: %@", argument);
     });
     method_setImplementation(class_getInstanceMethod([self class], @selector(runtimeLearn)), myIMP);
-    [self runtimeLearn];
+    [self runtimeLearn]; //这里不会死循环
+    
+    void (^myBlock)(id) = imp_getBlock(myIMP); //获取imp_implementationWithBlock绑定的block
+    myBlock(@"34"); //打印new implementation: 34
     
 }
 
