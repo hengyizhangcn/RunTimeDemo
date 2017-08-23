@@ -10,6 +10,10 @@
 #import <objc/runtime.h>
 #import <AVFoundation/AVFoundation.h>
 
+
+static void setFlyHeight(id self, SEL cmd, float height);
+void changeCheck(__strong id name);
+
 @interface RunTimeViewController ()
 
 @property (class) NSInteger height;
@@ -36,9 +40,117 @@ static NSInteger _height = 0;
 }
 
 /**
- 库、选择器、
+ OC 语言特性language feature
  */
 - (void)runtimeLearn
+{
+    
+    void (*handler)(id) = changeCheck; //函数指针变量
+    
+    NSNumber *index = @90;
+    
+    objc_setEnumerationMutationHandler(handler);
+    objc_enumerationMutation(index); //监控对象的变化，注意：objc_setEnumerationMutationHandler需要先设置，不然会引起内部错误
+    index = @80; //这句话执行后，会调用changeCheck
+    
+    IMP myIMP = imp_implementationWithBlock(^(id argument){ //创建一个指向block的指针
+        NSLog(@"new implementation: %@", argument);
+    });
+    method_setImplementation(class_getInstanceMethod([self class], @selector(runtimeLearn)), myIMP);
+    [self runtimeLearn];
+    
+}
+
+void changeCheck(id name) {
+    if ([name isKindOfClass:[NSString class]]) {
+        printf("%s", [((NSString *)name) cStringUsingEncoding:NSUTF8StringEncoding]);
+    } else if ([name isKindOfClass:[NSNumber class]]) {
+        printf("%ld", ((NSNumber *)name).integerValue);
+    }
+//    printf("%@", name);
+}
+/**
+ 协议, property
+ */
+- (void)runtimeLearnProtocolAndProperty {
+    Protocol *copyProtocol = objc_getProtocol("NSCopy");
+    [self conformsToProtocol:copyProtocol];
+    
+    unsigned int outCount = 0;
+    
+    __unsafe_unretained Protocol ** list = objc_copyProtocolList(&outCount); //共791个协议
+    for (int i = 0; i < outCount; i++) {
+        Protocol *tempProtocol = list[i];
+//        NSLog(@"%@", NSStringFromProtocol(tempProtocol));
+    }
+    free(list);
+    
+    Protocol *planeFlyProtocol = objc_allocateProtocol("planeFlyProtocol");
+    protocol_addMethodDescription(planeFlyProtocol, @selector(setFlyHeight:), "v24@0:8f16", YES, YES);//给实例添加一个必须的方法
+    protocol_addMethodDescription(planeFlyProtocol, @selector(setExpressionFormula:), "v@:@", YES, YES);
+    objc_property_attribute_t *atomicAttribute = (objc_property_attribute_t *)malloc(sizeof(objc_property_attribute_t *));
+    atomicAttribute->name = "N";
+    atomicAttribute->value = "";
+    objc_property_attribute_t *weakAttribute = (objc_property_attribute_t *)malloc(sizeof(objc_property_attribute_t *));
+    weakAttribute->name = "C";
+    weakAttribute->value = "";
+    objc_property_attribute_t *readAttribute = (objc_property_attribute_t *)malloc(sizeof(objc_property_attribute_t *));
+    readAttribute->name = "R";
+    readAttribute->value = "";
+    objc_property_attribute_t *typeAttribute = (objc_property_attribute_t *)malloc(sizeof(objc_property_attribute_t *));
+    typeAttribute->name = "T";
+    typeAttribute->value = "@\"NSString\"";
+    objc_property_attribute_t *varAttribute = (objc_property_attribute_t *)malloc(sizeof(objc_property_attribute_t *));
+    varAttribute->name = "V";
+    varAttribute->value = "_windSpeed";
+    //http://blog.csdn.net/myzlk/article/details/50815381
+    
+    objc_property_attribute_t attributes[] = {*typeAttribute, *weakAttribute, *atomicAttribute, *readAttribute, *varAttribute};
+//    objc_property_attribute_t attributes[] = {{"&","N"},{"T", "@\"NSString\""}, {"V", ""}}; //这样写更方便
+    protocol_addProperty(planeFlyProtocol, "windSpeed", attributes, 5, YES, YES); //给实例添加一个可选的属性
+    protocol_addProtocol(planeFlyProtocol, objc_getProtocol("UITableViewDelegate")); //后一个协议必须在运行时注册过
+    objc_registerProtocol(planeFlyProtocol); //协议在创建后调用此方法，一旦成功，将不可变而且可以使用，即所有对协议的改动应该在注册之前
+    
+    
+//    Protocol *planeFlyProtocol = objc_getProtocol("planeFlyProtocol");
+    
+    protocol_getName(planeFlyProtocol); //"planeFlyProtocol"
+    
+    protocol_isEqual(planeFlyProtocol, objc_getProtocol("UITableViewDelegate")); //NO
+    
+    unsigned int methodCount;
+    struct objc_method_description *methodDescription = protocol_copyMethodDescriptionList(planeFlyProtocol, YES, YES, &methodCount);
+    for (int i = 0; i < methodCount; i ++) {
+        struct objc_method_description temp = methodDescription[i];
+        NSLog(@"%@, %s", NSStringFromSelector(temp.name), temp.types);
+    }
+    
+//    unsigned int outCount = 0;
+    const objc_property_t *propertyList = protocol_copyPropertyList(planeFlyProtocol, &outCount);
+    for (int i = 0; i < outCount; i++) {
+        objc_property_t tempAttribute = propertyList[i];
+        NSLog(@"%s", property_getName(tempAttribute));
+        property_getAttributes(tempAttribute); //"T@"NSString",C,N,R,V_windSpeed"，其中N代表nonatomic,&代表retain/strong，
+        //类型编码：        https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtPropertyIntrospection.html#//apple_ref/doc/uid/TP40008048-CH101-SW1
+        property_copyAttributeValue(tempAttribute, property_getName(tempAttribute)); //
+        
+        unsigned int attributeCount;
+        objc_property_attribute_t *attributeList = property_copyAttributeList(tempAttribute, &attributeCount);
+        for (int i = 0; i < attributeCount; i ++) {
+            objc_property_attribute_t attribute = attributeList[i];
+            NSLog(@"%s, %s", attribute.name, attribute.value);
+        }
+    }
+    
+    class_getProperty([self class], "address");
+    property_getAttributes(class_getProperty([self class], "viewLoaded"));//"TB,R,N,GisViewLoaded", type:bool, readonly, nonatomic, getter=isViewLoaded
+    property_getAttributes(class_getProperty([self class], "address"));//"T@"NSString",W,N,V_address"，type:NSString, weak, nonatomic, var:_address
+}
+
+/**
+ 库、选择器、
+ */
+- (void)runtimeLearnLibraryAndSelector
 {
     unsigned int outCount = 0;
     const char ** imageNames = objc_copyImageNames(&outCount); //iOS10，共59个框架和动态库
