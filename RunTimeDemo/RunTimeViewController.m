@@ -40,9 +40,27 @@ static NSInteger _height = 0;
 }
 
 /**
- OC 语言特性language feature
+ 类定义、数据结构
  */
 - (void)runtimeLearn
+{
+    NSIntegerMax;
+    NSIntegerMin;
+    OBJC_BOOL_IS_BOOL;
+    OBJC_NO_GC_API; //如果target是mac osx，该宏未定义
+    
+    objc_AssociationPolicy;
+    OBJC_ASSOCIATION_ASSIGN;//向关联对象指定一个弱引用
+    OBJC_ASSOCIATION_COPY; //关联是原子性的，并且关联的对象被复制了
+    OBJC_ASSOCIATION_COPY_NONATOMIC; //
+    OBJC_ASSOCIATION_RETAIN; //向关联对象指定一个强引用，并且是原子性的
+    OBJC_ASSOCIATION_RETAIN_NONATOMIC; //强引用，非原子性
+}
+
+/**
+ OC 语言特性language feature
+ */
+- (void)runtimeLearnLanguageFeature
 {
     
     void (*handler)(id) = changeCheck; //函数指针变量
@@ -62,6 +80,16 @@ static NSInteger _height = 0;
     void (^myBlock)(id) = imp_getBlock(myIMP); //获取imp_implementationWithBlock绑定的block
     myBlock(@"34"); //打印new implementation: 34
     
+    NSLog(@"%d", imp_removeBlock(myIMP)); //打印1
+//    NSLog(@"%d", imp_removeBlock(myIMP)); //EXC_BAD_ACCESS野指针
+    
+    __weak id treeNumber = @"where are you?";
+    
+    objc_loadWeak(&treeNumber); //打印where are you?
+    
+    objc_storeWeak(&treeNumber, @"I'm in China");
+    
+    NSLog(@"%@", objc_loadWeak(&treeNumber)); //打印I'm in China
 }
 
 void changeCheck(id name) {
