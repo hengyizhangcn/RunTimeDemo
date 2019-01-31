@@ -16,13 +16,21 @@ elif [[ ! "$PodspecPath" =~ ^[^=]*.podspec$ ]]; then
     exit 1
 fi
 
-#get the newest info
-git pull
+
+if [ ! -f "$PodspecPath" ]; then
+    echo "Podspec file don't exist!"
+    exit 1
+fi
 
 #get the version string, 
 # left part get the match string, like s.version          = '1.0.2.7'
 # right part will separate the string by "'", -f2 will get the second part the separated strings, like 1.0.2.7, then the version is got
 OriginVersion=`grep -E 's.version.*=' $PodspecPath | cut -d \' -f2`
+
+if [ "$OriginVersion" = "" ]; then
+    echo "File content error, please check it again!"
+    exit 1
+fi
 
 #awk, line processor
 #FS: field separator
@@ -35,6 +43,9 @@ NewVersion=`echo $OriginVersion | awk 'BEGIN{FS=OFS="."}{$NF+=1;print}'` #print 
 # 11:  s.version          = '1.0.2.7'
 # and the right part of the command will separated the string by ":", -f1 will get the first part the separated strings, like 11, then the line number is got
 LineNumber=`grep -nE 's.version.*=' $PodspecPath | cut -d : -f1`
+
+#get the newest info
+git pull
 
 #-i, modify the file directly
 #s, use replace pattern
