@@ -34,6 +34,6 @@ LineNumber=`grep -nE 's.version.*=' $PodspecPath | cut -d : -f1`
 sed -i "" "${LineNumber}s/${OriginVersion}/${NewVersion}/g" $PodspecPath #identifical line number
 
 git add .
-git commit -a `${NewVersion}` -m 'update podspec'
-# git tag -a $NewVersion -m $NewVersion
-# git push origin --tags
+git commit -m 'update podspec'
+git tag -a $NewVersion -m $NewVersion
+git push origin --tags

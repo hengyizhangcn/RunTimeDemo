@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'SCCommonModule'
-  s.version          = '1.0.2.20'
+  s.version          = '1.0.2.22'
   '1.0.2.14'
   s.summary          = 'A short description of SCCommonModule.'
 
