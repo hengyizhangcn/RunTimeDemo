@@ -35,5 +35,7 @@ sed -i "" "${LineNumber}s/${OriginVersion}/${NewVersion}/g" $PodspecPath #identi
 
 git add .
 git commit -m 'update podspec'
+git push
+
 git tag -a $NewVersion -m $NewVersion
 git push origin --tags
