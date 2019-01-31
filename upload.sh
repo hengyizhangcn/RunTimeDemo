@@ -6,7 +6,15 @@
 #3.push the modification
 #4.add a new tag and push tags
 
-PodspecPath="SCCommonModule.podspec"
+PodspecPath=`echo $1`
+
+#the regular expression '[^=]*' match any characters, different from the normal regular expression like [\W\w]*, etc
+if [ "$PodspecPath" = "" ]; then
+    PodspecPath="SCCommonModule.podspec"
+elif [[ ! "$PodspecPath" =~ ^[^=]*.podspec$ ]]; then
+    echo "error! should point the podspec path"
+    exit 1
+fi
 
 #get the newest info
 git pull
@@ -33,9 +41,11 @@ LineNumber=`grep -nE 's.version.*=' $PodspecPath | cut -d : -f1`
 #g, global scope
 sed -i "" "${LineNumber}s/${OriginVersion}/${NewVersion}/g" $PodspecPath #identifical line number
 
+#commit the modification
 git add .
 git commit -m 'update podspec'
 git push
 
+#add a new tag
 git tag -a $NewVersion -m $NewVersion
 git push origin --tags
