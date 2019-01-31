@@ -12,7 +12,7 @@ PodspecPath=`echo $1`
 if [ "$PodspecPath" = "" ]; then
     PodspecPath="SCCommonModule.podspec"
 elif [[ ! "$PodspecPath" =~ ^[^=]*.podspec$ ]]; then
-    echo "error! should point the podspec path"
+    echo "Error! You should point the podspec path!"
     exit 1
 fi
 

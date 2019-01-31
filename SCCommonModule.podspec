@@ -8,8 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'SCCommonModule'
-  s.version          = '1.0.2.26'
-  '1.0.2.14'
+  s.version          = '1.0.2.27'
   s.summary          = 'A short description of SCCommonModule.'
 
 # This description is used to generate tags and improve search results.
